@@ -18,7 +18,7 @@ export default function Videos() {
 
   // Fetch from Python Backend
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/videos')
+    axios.get('https://gorkhali-backend.onrender.com/api/videos')
       .then(response => {
         setVideos(response.data);
       })
