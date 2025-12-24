@@ -41,7 +41,7 @@ def format_number(num_str):
 # New: Root Route (so you don't see "Not Found" on the main page)
 @app.get("/")
 def home():
-    return {"message": "Gorkhali Backend is Live! Go to /api/hero-stats"}
+    return {"message": "Gorkhali Backend V2 IS WORKING!"}
 
 # Endpoint 1: Hero Stats
 @app.get("/api/hero-stats")
