@@ -11,20 +11,22 @@ CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 app = FastAPI()
 
-# 2. CORS (Security)
-# Fixing CORS for Vercel deployment
+# 2. CORS (The Fix: Allow Everyone)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # <--- This allows Vercel, Localhost, everyone.
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
-    allow_methods=["*"],  # <--- Allows GET, POST, etc.
-    allow_headers=["*"],  # <--- Allows all headers.
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # 3. Setup YouTube Connection
-youtube = build('youtube', 'v3', developerKey=API_KEY)
+try:
+    youtube = build('youtube', 'v3', developerKey=API_KEY)
+except Exception as e:
+    print(f"YouTube connection failed: {e}")
 
-# Helper: Number Formatter (1500 -> 1.5K)
+# Helper: Number Formatter
 def format_number(num_str):
     if not num_str: return "0"
     num = int(num_str)
@@ -33,6 +35,13 @@ def format_number(num_str):
     elif num >= 1_000:
         return f"{num / 1_000:.0f}K"
     return str(num)
+
+# --- ROUTES ---
+
+# New: Root Route (so you don't see "Not Found" on the main page)
+@app.get("/")
+def home():
+    return {"message": "Gorkhali Backend is Live! Go to /api/hero-stats"}
 
 # Endpoint 1: Hero Stats
 @app.get("/api/hero-stats")
@@ -53,14 +62,11 @@ def get_stats():
         print(f"Error: {e}")
         return {"subscribers": "Error", "views": "Error", "videos": "Error"}
 
-# Endpoint 2: Latest Videos (NEW!)
+# Endpoint 2: Latest Videos
 @app.get("/api/videos")
 def get_videos():
     try:
-        # A. Get the 'Uploads' Playlist ID (Usually just swap 'C' for 'U' in Channel ID)
         uploads_id = CHANNEL_ID.replace("UC", "UU", 1)
-
-        # B. Get the last 3 videos from that playlist
         playlist_req = youtube.playlistItems().list(
             playlistId=uploads_id,
             part="snippet",
@@ -71,7 +77,6 @@ def get_videos():
         videos = []
         video_ids = []
 
-        # C. Extract basic info
         for item in playlist_res.get("items", []):
             vid_id = item["snippet"]["resourceId"]["videoId"]
             video_ids.append(vid_id)
@@ -80,11 +85,10 @@ def get_videos():
                 "id": vid_id,
                 "title": item["snippet"]["title"],
                 "image": item["snippet"]["thumbnails"]["high"]["url"],
-                "category": "Latest", # Can't get real tags easily without more quota
+                "category": "Latest", 
                 "link": f"https://www.youtube.com/watch?v={vid_id}"
             })
 
-        # D. Fetch View Counts for these specific videos
         if video_ids:
             stats_req = youtube.videos().list(
                 id=",".join(video_ids),
@@ -92,7 +96,6 @@ def get_videos():
             )
             stats_res = stats_req.execute()
             
-            # Match views to the videos
             for i, item in enumerate(stats_res.get("items", [])):
                 raw_views = item["statistics"].get("viewCount", "0")
                 videos[i]["views"] = format_number(raw_views) + " Views"
