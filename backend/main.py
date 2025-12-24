@@ -12,12 +12,13 @@ CHANNEL_ID = os.getenv("CHANNEL_ID")
 app = FastAPI()
 
 # 2. CORS (Security)
+# Fixing CORS for Vercel deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # <--- This allows Vercel, Localhost, everyone.
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # <--- Allows GET, POST, etc.
+    allow_headers=["*"],  # <--- Allows all headers.
 )
 
 # 3. Setup YouTube Connection
